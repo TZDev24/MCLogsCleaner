@@ -19,6 +19,7 @@ namespace Minecraft_Logs_Cleaner
 
         // To make the text look a bit prettier, also easier to distinguish what's what
         const string CYAN = "\e[0;36m";
+        const string GREEN = "\e[0;32m";
         const string RESET = "\e[0m";
 
         static void Main(string[] args)
@@ -39,6 +40,12 @@ namespace Minecraft_Logs_Cleaner
                 // Count the logs in logs and \telemetry, but don't count the telemetry folder itself
                 int numTelemetryLogs = GetNumFiles($"{minecraftLogsDir}\\telemetry");
                 int totalLogs = numLogs + numTelemetryLogs;
+
+                if (totalLogs == 0)
+                {
+                    Console.WriteLine($"No log files were found. {GREEN}Logs directory is Empty!{RESET} Exiting");
+                    Environment.Exit(0);
+                }
 
                 // Start collecting the file sizes of every file
                 long totalFileSize_bytes = 0L;
