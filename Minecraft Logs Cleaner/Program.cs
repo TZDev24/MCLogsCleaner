@@ -17,6 +17,11 @@ namespace Minecraft_Logs_Cleaner
             return fileInfo.Length;
         }
 
+        static double BytesToKB(long bytes)
+        {
+            return bytes / 1024f;
+        }
+
         // To make the text look a bit prettier, also easier to distinguish what's what
         const string CYAN = "\e[0;36m";
         const string GREEN = "\e[0;32m";
@@ -24,6 +29,15 @@ namespace Minecraft_Logs_Cleaner
 
         static void Main(string[] args)
         {
+
+            // Help menu
+            if(args.Contains("--help"))
+            {
+                Console.WriteLine($"{CYAN}--help{RESET} -> Display this help text and list of commands");
+                Console.WriteLine($"{CYAN}--no-ask{RESET} -> Clear logs folder without asking first");
+
+                Environment.Exit(0);
+            }
             // We need these in order to do anything, so get the directories first
             string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string minecraftLogsDir = $"{homeDir}\\AppData\\Roaming\\.minecraft\\logs";
@@ -62,26 +76,47 @@ namespace Minecraft_Logs_Cleaner
                     totalFileSize_bytes += GetFileSize(file);
                 }
 
-                double totalSize_KB = totalFileSize_bytes / 1024f;
+                double totalSize_KB = BytesToKB(totalFileSize_bytes);
                 totalSize_KB = Math.Round(totalSize_KB, 1);
 
                 Console.WriteLine($"# Files found in {minecraftLogsDir}: {CYAN}{totalLogs}{RESET}");
                 Console.WriteLine($"Total file size: {CYAN}{totalSize_KB} KB{RESET}");
 
-                Console.WriteLine("Do you want to clear the logs folder? (Y/N)");
-                string answer = Console.ReadLine().ToLower();
-
-                if (answer.Equals("y") || answer.Equals("yes"))
+                // Don't mess with the user's files before asking
+                if (!args.Contains("--no-ask"))
                 {
-                    foreach (string file in telemetryLogFiles)
+                    Console.WriteLine("Do you want to clear the logs folder? (Y/N)");
+                    string answer = Console.ReadLine().ToLower();
+
+                    if (answer.Equals("y") || answer.Equals("yes"))
+                    {
+                        foreach (string file in telemetryLogFiles)
+                        {
+                            File.Delete(file);
+                        }
+
+                        foreach (string file in logFiles)
+                        {
+                            File.Delete(file);
+                        }
+                    }
+
+                    Console.WriteLine($"{totalLogs} files were deleted");
+                }
+                else
+                {
+                    // Provide the option to delete the files without asking for input; make automation possible
+                    foreach(string file in telemetryLogFiles)
+                    {
+                        File.Delete(file);
+                    }
+                    
+                    foreach(string file in logFiles)
                     {
                         File.Delete(file);
                     }
 
-                    foreach (string file in logFiles)
-                    {
-                        File.Delete(file);
-                    }
+                    Console.WriteLine($"{totalLogs} files were deleted");
                 }
             }
             else
