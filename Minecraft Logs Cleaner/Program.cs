@@ -17,6 +17,29 @@ namespace Minecraft_Logs_Cleaner
             return fileInfo.Length;
         }
 
+        static void DeleteAllFiles(string dir)
+        {
+            foreach(string file in Directory.GetFiles(dir))
+            {
+                File.Delete(file);
+            }
+        }
+
+        static double GetSizeOfFilesInDir_KB(string dir)
+        {
+            long totalBytes = 0;
+
+            string[] files = Directory.GetFiles(dir);
+
+            foreach (string file in files)
+            {
+                FileInfo fileInfo = new FileInfo(file);
+                totalBytes += fileInfo.Length;
+            }
+
+            return totalBytes / 1024f;
+        }
+
         static double BytesToKB(long bytes)
         {
             return bytes / 1024f;
@@ -41,9 +64,10 @@ namespace Minecraft_Logs_Cleaner
             // We need these in order to do anything, so get the directories first
             string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string minecraftLogsDir = $"{homeDir}\\AppData\\Roaming\\.minecraft\\logs";
+            string telemetryLogsDir = $"{minecraftLogsDir}\\telemetry";
             
 
-            Console.WriteLine($"Home directory: {CYAN}{homeDir}{RESET}");
+            Console.WriteLine($"Home directory found: {CYAN}{homeDir}{RESET}");
             // Check if the minecraft_dir exists
             if (Directory.Exists(minecraftLogsDir))
             {
@@ -62,21 +86,12 @@ namespace Minecraft_Logs_Cleaner
                 }
 
                 // Start collecting the file sizes of every file
-                long totalFileSize_bytes = 0L;
-                string[] logFiles = Directory.GetFiles(minecraftLogsDir);
-                string[] telemetryLogFiles = Directory.GetFiles($"{minecraftLogsDir}\\telemetry");
 
-                foreach(string file in logFiles)
-                {
-                    totalFileSize_bytes += GetFileSize(file);
-                }
+                double totalSize_KB = 0;
+                totalSize_KB += GetSizeOfFilesInDir_KB(minecraftLogsDir);
+                totalSize_KB += GetSizeOfFilesInDir_KB(telemetryLogsDir);
 
-                foreach (string file in telemetryLogFiles)
-                {
-                    totalFileSize_bytes += GetFileSize(file);
-                }
-
-                double totalSize_KB = BytesToKB(totalFileSize_bytes);
+                // Make it more readable; round it down to just one decimal place
                 totalSize_KB = Math.Round(totalSize_KB, 1);
 
                 Console.WriteLine($"# Files found in {minecraftLogsDir}: {CYAN}{totalLogs}{RESET}");
@@ -90,31 +105,18 @@ namespace Minecraft_Logs_Cleaner
 
                     if (answer.Equals("y") || answer.Equals("yes"))
                     {
-                        foreach (string file in telemetryLogFiles)
-                        {
-                            File.Delete(file);
-                        }
+                        DeleteAllFiles(telemetryLogsDir);
+                        DeleteAllFiles(minecraftLogsDir);
 
-                        foreach (string file in logFiles)
-                        {
-                            File.Delete(file);
-                        }
+                        Console.WriteLine($"{CYAN}{totalLogs}{RESET} files were deleted");
                     }
 
-                    Console.WriteLine($"{totalLogs} files were deleted");
                 }
                 else
                 {
                     // Provide the option to delete the files without asking for input; make automation possible
-                    foreach(string file in telemetryLogFiles)
-                    {
-                        File.Delete(file);
-                    }
-                    
-                    foreach(string file in logFiles)
-                    {
-                        File.Delete(file);
-                    }
+                    DeleteAllFiles(telemetryLogsDir);
+                    DeleteAllFiles(minecraftLogsDir);
 
                     Console.WriteLine($"{totalLogs} files were deleted");
                 }
